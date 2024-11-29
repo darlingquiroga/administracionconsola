@@ -172,19 +172,30 @@ def agregar_reserva():
 
     fecha_nacimiento = datetime.strptime(fecha_nacimiento, "%d-%m-%Y").strftime("%Y/%m/%d")
 
-    fecha_checkin = input("Ingrese la fecha de check-in (DD-MM-YYYY): ")
-    while not validar_fecha_checkin_checkout(fecha_checkin):
+    fecha_checkin_str = input("Ingrese la fecha de check-in (DD-MM-YYYY): ")
+    while not validar_fecha_checkin_checkout(fecha_checkin_str):
         print("Fecha de check-in inválida. Debe ser en el futuro.")
-        fecha_checkin = input("Ingrese la fecha de check-in (DD-MM-YYYY): ")
+        fecha_checkin_str = input("Ingrese la fecha de check-in (DD-MM-YYYY): ")
 
-    fecha_checkin = datetime.strptime(fecha_checkin, "%d-%m-%Y").strftime("%Y/%m/%d")
+    fecha_checkin = datetime.strptime(fecha_checkin_str, "%d-%m-%Y")
 
-    fecha_checkout = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
-    while not validar_fecha_checkin_checkout(fecha_checkout) or fecha_checkout <= fecha_checkin:
-        print("Fecha de check-out inválida. Debe ser posterior a la fecha de check-in.")
-        fecha_checkout = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
+    fecha_checkout_str = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
+    while True:
+        try:
+            fecha_checkout = datetime.strptime(fecha_checkout_str, "%d-%m-%Y")
 
-    fecha_checkout = datetime.strptime(fecha_checkout, "%d-%m-%Y").strftime("%Y/%m/%d")
+            # Comparar las fechas de check-out y check-in como objetos datetime
+            if fecha_checkout <= fecha_checkin:
+                print("Fecha de check-out inválida. Debe ser posterior a la fecha de check-in.")
+                fecha_checkout_str = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
+            else:
+                break
+        except ValueError:
+            print("Formato de fecha inválido. Por favor ingrese la fecha en el formato DD-MM-YYYY.")
+            fecha_checkout_str = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
+
+    fecha_checkin = fecha_checkin.strftime("%Y/%m/%d")
+    fecha_checkout = fecha_checkout.strftime("%Y/%m/%d")
 
     tipo_habitacion = input("Ingrese el tipo de habitación (SIMPLE, DOBLE, SUITE): ").upper()
     while tipo_habitacion not in ["SIMPLE", "DOBLE", "SUITE"]:
@@ -222,26 +233,24 @@ def consultar_reservas():
     conexion = conectar_bd()
     cursor = conexion.cursor()
 
-    # Solicitamos la ordenación al usuario con un ciclo para asegurar que la opción es válida
+   
     while True:
         orden = input("¿Cómo desea ordenar las reservas? (nombre, apellido, fecha_checkin, fecha_checkout): ").lower()
 
-        # Verificamos que la opción de ordenamiento sea válida
+       
         if orden in ['nombre', 'apellido', 'fecha_checkin', 'fecha_checkout']:
-            # Realizamos la consulta con el campo correcto en el ORDER BY
+            
             cursor.execute(f"SELECT * FROM reservas WHERE estado = 'ACTIVA' ORDER BY {orden}")
-            break  # Salimos del ciclo si la opción es válida
+            break 
         else:
             print("Opción de ordenamiento inválida. Por favor, intente nuevamente.")
     
-    # Obtener los resultados de la consulta
-    reservas = cursor.fetchall()
     
-    # Mostrar las reservas
+    reservas = cursor.fetchall()
+   
     for reserva in reservas:
         print(f"ID: {reserva[0]}, Nombre: {reserva[1]} {reserva[2]}, Documento: {reserva[3]}, Fecha Check-in: {reserva[6]}, Fecha Check-out: {reserva[7]}, Habitación: {reserva[8]}, Precio: {reserva[9]}")
 
-    # Cerrar la conexión
     conexion.close()
 
 def modificar_reserva(): 
