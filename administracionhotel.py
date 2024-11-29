@@ -43,7 +43,9 @@ def menu_habitaciones():
         print("1. Consultar Habitaciones por Número")
         print("2. Consultar Habitaciones por Tipo")
         print("3. Consultar Habitaciones por Estado")
-        print("4. Volver al Menú Principal")
+        print("4. Consultar Habitaciones con Ordenamiento")
+        print("5. Volver al Menú Principal")
+        
         opcion = input("Seleccione una opción: ")
 
         if opcion == "1":
@@ -53,26 +55,21 @@ def menu_habitaciones():
         elif opcion == "3":
             consultar_habitaciones_por_estado()
         elif opcion == "4":
+            consultar_habitaciones_con_ordenamiento()
+        elif opcion == "5":
             break
         else:
             print("Opción no válida, intente nuevamente.")
 
-
 def consultar_habitaciones_por_numero():
-    tipo = input("Ingrese el tipo de habitación (SIMPLE, DOBLE, SUITE): ").upper()
-    rango = {"SIMPLE": (100, 110), "DOBLE": (200, 210), "SUITE": (300, 310)}
-    if tipo in rango:
-        conexion = conectar_bd()
-        cursor = conexion.cursor()
-        query = f"SELECT * FROM habitaciones WHERE numero_habitacion BETWEEN {rango[tipo][0]} AND {rango[tipo][1]}"
-        cursor.execute(query)
-        habitaciones = cursor.fetchall()
-        for habitacion in habitaciones:
-            print(f"Num. Habitación: {habitacion[0]}, Tipo: {habitacion[1]}, Disponible: {habitacion[2]}")
-        conexion.close()
-    else:
-        print("Tipo de habitación inválido.")
-
+    numero_habitacion = input("Ingrese el número de habitación: ")
+    conexion = conectar_bd()
+    cursor = conexion.cursor()
+    cursor.execute("SELECT * FROM habitaciones WHERE numero_habitacion = %s", (numero_habitacion,))
+    habitaciones = cursor.fetchall()
+    for habitacion in habitaciones:
+        print(f"Num. Habitación: {habitacion[0]}, Tipo: {habitacion[1]}, Disponible: {habitacion[2]}")
+    conexion.close()
 
 def consultar_habitaciones_por_tipo():
     tipo = input("Ingrese el tipo de habitación (SIMPLE, DOBLE, SUITE): ").upper()
@@ -93,6 +90,35 @@ def consultar_habitaciones_por_estado():
     for habitacion in habitaciones:
         print(f"Num. Habitación: {habitacion[0]}, Tipo: {habitacion[1]}, Disponible: {habitacion[2]}")
     conexion.close()
+
+def consultar_habitaciones_con_ordenamiento():
+    print("\nOpciones de ordenamiento para habitaciones:")
+    print("1. Por número de habitación (ascendente)")
+    print("2. Por tipo de habitación (alfabéticamente)")
+    print("3. Por disponibilidad (disponibles primero)")
+
+    orden = input("Seleccione una opción de ordenamiento (1, 2, 3): ")
+
+    conexion = conectar_bd()
+    cursor = conexion.cursor()
+
+    if orden == "1":
+        cursor.execute("SELECT * FROM habitaciones ORDER BY numero_habitacion ASC;")
+    elif orden == "2":
+        cursor.execute("SELECT * FROM habitaciones ORDER BY tipo ASC;")
+    elif orden == "3":
+        cursor.execute("SELECT * FROM habitaciones ORDER BY (disponible = 'SI') DESC, tipo ASC;")
+    else:
+        print("Opción no válida.")
+        conexion.close()
+        return
+
+    habitaciones = cursor.fetchall()
+    for habitacion in habitaciones:
+        print(f"Num. Habitación: {habitacion[0]}, Tipo: {habitacion[1]}, Disponible: {habitacion[2]}")
+
+    conexion.close()
+
 
 def menu_reservas():
     while True:
@@ -183,28 +209,39 @@ def agregar_reserva():
         cursor.execute("INSERT INTO reservas (nombre, apellido, documento, fecha_nacimiento, telefono, fecha_checkin, fecha_checkout, numero_habitacion, precio, estado) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'ACTIVA')", 
                        (nombre, apellido, documento, fecha_nacimiento, telefono, fecha_checkin, fecha_checkout, numero_habitacion, precio))
         cursor.execute("UPDATE habitaciones SET disponible = 'NO' WHERE numero_habitacion = %s", (numero_habitacion,))
+
         conexion.commit()
-        print("Reserva realizada con éxito.")
+        print(f"Reserva realizada con éxito para {nombre} {apellido} en la habitación {numero_habitacion}.")
     else:
         print("No hay habitaciones disponibles para el tipo seleccionado.")
 
     conexion.close()
 
+
 def consultar_reservas():
     conexion = conectar_bd()
     cursor = conexion.cursor()
 
-    orden = input("¿Cómo desea ordenar las reservas? (nombre, apellido, checkin, checkout): ").lower()
-    if orden in ['nombre', 'apellido', 'checkin', 'checkout']:
-        cursor.execute(f"SELECT * FROM reservas WHERE estado = 'ACTIVA' ORDER BY {orden}")
-    else:
-        print("Opción de ordenamiento inválida. Mostrando todas las reservas.")
-        cursor.execute("SELECT * FROM reservas WHERE estado = 'ACTIVA'")
+    # Solicitamos la ordenación al usuario con un ciclo para asegurar que la opción es válida
+    while True:
+        orden = input("¿Cómo desea ordenar las reservas? (nombre, apellido, fecha_checkin, fecha_checkout): ").lower()
 
+        # Verificamos que la opción de ordenamiento sea válida
+        if orden in ['nombre', 'apellido', 'fecha_checkin', 'fecha_checkout']:
+            # Realizamos la consulta con el campo correcto en el ORDER BY
+            cursor.execute(f"SELECT * FROM reservas WHERE estado = 'ACTIVA' ORDER BY {orden}")
+            break  # Salimos del ciclo si la opción es válida
+        else:
+            print("Opción de ordenamiento inválida. Por favor, intente nuevamente.")
+    
+    # Obtener los resultados de la consulta
     reservas = cursor.fetchall()
+    
+    # Mostrar las reservas
     for reserva in reservas:
         print(f"ID: {reserva[0]}, Nombre: {reserva[1]} {reserva[2]}, Documento: {reserva[3]}, Fecha Check-in: {reserva[6]}, Fecha Check-out: {reserva[7]}, Habitación: {reserva[8]}, Precio: {reserva[9]}")
 
+    # Cerrar la conexión
     conexion.close()
 
 def modificar_reserva(): 
