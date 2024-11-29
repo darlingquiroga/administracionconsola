@@ -39,7 +39,7 @@ def obtener_precio(tipo_habitacion):
 
 def menu_habitaciones():
     while True:
-        print("\n--- MENÚ GESTIÓN DE HABITACIONES ---")
+        print("\n-- MENÚ GESTIÓN DE HABITACIONES --")
         print("1. Consultar Habitaciones por Número")
         print("2. Consultar Habitaciones por Tipo")
         print("3. Consultar Habitaciones por Estado")
@@ -184,7 +184,7 @@ def agregar_reserva():
         try:
             fecha_checkout = datetime.strptime(fecha_checkout_str, "%d-%m-%Y")
 
-            # Comparar las fechas de check-out y check-in como objetos datetime
+            
             if fecha_checkout <= fecha_checkin:
                 print("Fecha de check-out inválida. Debe ser posterior a la fecha de check-in.")
                 fecha_checkout_str = input("Ingrese la fecha de check-out (DD-MM-YYYY): ")
