@@ -41,8 +41,8 @@ def menu_habitaciones():
     while True:
         print("\n-- MENÚ GESTIÓN DE HABITACIONES --")
         print("1. Consultar Habitaciones por Número")
-        print("2. Consultar Habitaciones por Tipo")
-        print("3. Consultar Habitaciones por Estado")
+        print("2. Consultar Habitaciones por Tipo(Simple-Ddoble-Suite)")
+        print("3. Consultar Habitaciones por Estado(DISPONIBLE SI/NO)")
         print("4. Consultar Habitaciones con Ordenamiento")
         print("5. Volver al Menú Principal")
         
@@ -253,56 +253,77 @@ def consultar_reservas():
 
     conexion.close()
 
-def modificar_reserva(): 
+def modificar_reserva():
     id_reserva = input("Ingrese el ID de la reserva a modificar: ")
     conexion = conectar_bd()
     cursor = conexion.cursor()
-    cursor.execute("SELECT * FROM reservas WHERE id_reserva = %s", (id_reserva,))
+
+    # Modificamos la consulta para buscar solo las reservas activas
+    cursor.execute("SELECT * FROM reservas WHERE id_reserva = %s AND estado = 'ACTIVA'", (id_reserva,))
     reserva = cursor.fetchone()
 
     if reserva:
-        print(f"Reserva encontrada: {reserva}")
+        # Obtener los nombres de las columnas de la tabla
+        column_names = [desc[0] for desc in cursor.description]
         
+        # Mostrar los datos actuales de la reserva con los nombres de las columnas
+        print("\n--- Datos de la Reserva a Modificar ---")
+        for column_name, value in zip(column_names, reserva):
+            print(f"{column_name}: {value}")
+        
+        # Modificación de la fecha de check-in
         while True:
-            fecha_checkin_str = input("Ingrese la nueva fecha de check-in (DD-MM-YYYY): ")
+            fecha_checkin_str = input("\nIngrese la nueva fecha de check-in (DD-MM-YYYY) o 'cancelar' para salir: ")
+            if fecha_checkin_str.lower() == 'cancelar':
+                print("Modificación cancelada.")
+                conexion.close()
+                return  
+
             try:
                 fecha_checkin = datetime.strptime(fecha_checkin_str, "%d-%m-%Y")
                 if fecha_checkin <= datetime.today():
                     print("Fecha de check-in inválida. No puede ser en el pasado.")
                 else:
-                    break
+                    break  
             except ValueError:
                 print("Formato de fecha inválido. Por favor ingrese la fecha en el formato DD-MM-YYYY.")
         
         fecha_checkin = fecha_checkin.strftime("%Y/%m/%d")
 
+        # Modificación de la fecha de check-out
         while True:
-            fecha_checkout_str = input("Ingrese la nueva fecha de check-out (DD-MM-YYYY): ")
+            fecha_checkout_str = input("\nIngrese la nueva fecha de check-out (DD-MM-YYYY) o 'cancelar' para salir: ")
+            if fecha_checkout_str.lower() == 'cancelar':
+                print("Modificación cancelada.")
+                conexion.close()
+                return  
+
             try:
                 fecha_checkout = datetime.strptime(fecha_checkout_str, "%d-%m-%Y")
-                
                 fecha_checkin_dt = datetime.strptime(fecha_checkin, "%Y/%m/%d")
+                
                 if fecha_checkout <= fecha_checkin_dt:
                     print("Fecha de check-out inválida. Debe ser posterior a la fecha de check-in.")
                 else:
-                    break
+                    break  
             except ValueError:
                 print("Formato de fecha inválido. Por favor ingrese la fecha en el formato DD-MM-YYYY.")
         
-        
         fecha_checkout = fecha_checkout.strftime("%Y/%m/%d")
 
-        confirmacion = input(f"¿Está seguro que desea modificar esta reserva? (S/N): ").upper()
+        confirmacion = input(f"\n¿Está seguro que desea modificar esta reserva? (S/N): ").upper()
         if confirmacion == "N":
             print("Modificación cancelada.")
-            return
-        
+            conexion.close()
+            return  
+
+        # Realizar la actualización en la base de datos
         cursor.execute("UPDATE reservas SET fecha_checkin = %s, fecha_checkout = %s WHERE id_reserva = %s", 
                        (fecha_checkin, fecha_checkout, id_reserva))
         conexion.commit()
-        print("Reserva modificada con éxito.")
+        print("\nReserva modificada con éxito.")
     else:
-        print("Reserva no encontrada.")
+        print("No se encontró una reserva activa con ese ID.")
 
     conexion.close()
 
