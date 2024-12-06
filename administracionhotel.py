@@ -219,22 +219,26 @@ def agregar_reserva():
     conexion.close()
 
 # CONSULTA 1.2 RESERVAS
+# CONSULTA 1.2 RESERVAS
+# CONSULTA 1.2 RESERVAS
 def consultar_reservas():
     conexion = conectar_bd()
     cursor = conexion.cursor()
 
     # OPCIÓN DE FILTRADO
     while True:
-        filtro = input("¿Por qué desea consultar las reservas? (nombre, apellido, documento, fecha_checkin, fecha_checkout): ").lower()
+        filtro = input("¿Por qué desea consultar las reservas? (nombre, apellido, documento): ").lower()
 
-        if filtro in ['nombre', 'apellido', 'documento', 'fecha_checkin', 'fecha_checkout']:
+        if filtro in ['nombre', 'apellido', 'documento']:
             valor_filtro = input(f"Ingrese el valor para {filtro}: ")
+
+            # Consulta SQL ajustada sin fechas
+            consulta = f"SELECT * FROM reservas WHERE estado = 'ACTIVA' AND {filtro} LIKE %s"
             
-            consulta = f"SELECT * FROM reservas WHERE estado = 'ACTIVA' AND {filtro} LIKE %s" # ESTADO ACTIVO
-            cursor.execute(consulta, (f'%{valor_filtro}%',))
+            cursor.execute(consulta, (f"%{valor_filtro}%",))
             break
         else:
-            print("Opción de filtro inválida. Por favor, intente nuevamente.")
+            print("Opción de filtro.Elija una de las 3 opciones . intente nuevamente por favor.")
     
     reservas = cursor.fetchall()
 
@@ -245,6 +249,8 @@ def consultar_reservas():
         print("No se encontraron reservas con los criterios especificados.")
     
     conexion.close()
+
+
 
 # MODIFICAR 1.3  RESERVA
 def modificar_reserva():
